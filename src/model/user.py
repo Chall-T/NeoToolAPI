@@ -39,17 +39,17 @@ class TokenData(BaseModel):
     scopes: List[str] = []
 
 class User(BaseModel):
-    iduser: int
-    gge_id: Union[int, None] = None
+    iduser: Union[int, None] = None
+    gge_id: Union[str, None] = None
     gge_name: Union[str, None] = None
     gge_world: Union[str, None] = None
     sub: Union[datetime, str] = None
     client: Union[int, None] = None
-    telegram_id: Union[str, None] = None
+    telegram_id: Union[int, str] = None
     last_ip: Union[str, None] = None
     last_socket: Union[str, None] = None
     gge_connection: Union[str, None] = None
-    lts: Union[int, None] = None
+    lts: Union[str, int] = None
     api_key: Union[str, None] = None
     disabled: bool = False
 
