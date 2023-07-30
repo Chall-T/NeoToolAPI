@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, ValidationError
-from typing import Annotated, List, Union
+from typing import Annotated, List, Union, Type
 from fastapi import Depends, FastAPI, HTTPException, Security, status
 from datetime import datetime
 from passlib.context import CryptContext
@@ -39,8 +39,8 @@ class TokenData(BaseModel):
     scopes: List[str] = []
 
 class User(BaseModel):
-    iduser: Union[int, None] = None
-    gge_id: Union[str, None] = None
+    iduser: int
+    gge_id: Union[int, str]
     gge_name: Union[str, None] = None
     gge_world: Union[str, None] = None
     sub: Union[datetime, str] = None
@@ -61,16 +61,64 @@ class User(BaseModel):
     
     def as_dict(self):
         return vars(self)
+class StatEvent(BaseModel):
+    id: int = 0
+    name: Union[str, None] = None
 
+class StatEvents(BaseModel):
+    data: List[Type[StatEvent]]
+    def add_new_stat(self, user_stat: Type[StatEvent]):
+        self.data.append(user_stat)
+        return True
+    def get_event_name_by_id(self, id):
+        for event in self.data:
+            if event.id != id:
+                continue
+            return event.name
+        return f"Event: {id}"
+class User_stat(BaseModel):
+    id: int = 0
+    iduser: int
+    event_name: Union[str, None] = None
+    event_id: int = 0
+    count: int = 0
+    created: Union[datetime, None] = datetime.now()
+
+class User_stats():
+    def __init__(self):
+        self.data = []
+        self.summarized: dict = {}
+        self.grouped: list = []
+    def add_new_stat(self, user_stat: User_stat):
+        self.data.append(user_stat)
+        return True
+    def summarize(self):
+        self.summarized: dict = {}
+        for stat in self.data:
+            del stat['id']
+            del stat['created']
+            self.summarized.update(stat)
+        return self.summarized
+    def group_by(self, event: str):
+        self.grouped: list = []
+        for stat in self.data:
+            if stat['event'] != event:
+                continue
+            self.grouped.append(stat)
+        return self.grouped
 
 class OAuth2PasswordRequestFormWithAdmin(OAuth2PasswordRequestForm):
     def __init__(
         self,
         admin_username: Annotated[str, Form()],
         admin_password: Annotated[str, Form()],
+        username: Annotated[str, Form()],
+        password: Annotated[str, Form()],
     ):
         self.admin_username = admin_username
         self.admin_password = admin_password
+        self.username = self.username
+        self.password = self.password
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

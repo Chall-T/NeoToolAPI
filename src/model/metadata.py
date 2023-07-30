@@ -1,7 +1,8 @@
 from datetime import datetime
 import time
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field
 from typing import Annotated, List, Union
+from fastapi import Body
 
 def get_datetime():
     date = datetime.now()
@@ -20,3 +21,11 @@ class AppVersion(BaseModel):
     date: Union[datetime, str] = None
     
     def update_version(self, version:str, cdata:int):
+        ...
+class CreateNewStatItem(BaseModel):
+    event: str | None = Field(
+        default='Attack', description="Event group name"
+    )
+    count: int | None = Field(
+        default=1, description="Amount of the logged stat"
+    )

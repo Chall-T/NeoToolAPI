@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Annotated, List, Union
 from dotenv import load_dotenv
 import os, binascii
-from fastapi import Depends, FastAPI, HTTPException, Security, status
+from fastapi import Depends, FastAPI, HTTPException, Security, status, Request, Body
 from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
@@ -12,17 +12,19 @@ from fastapi.param_functions import Form
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, ValidationError
-from src.repository.database import get_user, create_new_api_key
+from src.repository.database import get_user, get_user_by_id, create_new_api_key, create_new_stat_for_user, get_event_by_name, get_stats_of_user
 from src.model.user import *
+from src.model.metadata import CreateNewStatItem
 import uvicorn
+
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 1 day
 USER_TABLE = 'users'
 
-app = FastAPI(root_path="/api/v1")
+app = FastAPI(root_path="/api/v1", swagger_ui_parameters={"defaultModelsExpandDepth": -1})
 
 
-@app.post("/new_api_key")
+@app.post("/api_key")
 async def create_api_key_for_user(
     form_data: Annotated[OAuth2PasswordRequestFormWithAdmin, Depends()]
 ):
@@ -66,9 +68,15 @@ async def read_own_items(
     return [{"item_id": "Foo", "owner": current_user.gge_name}]
 
 
-@app.get("/status/")
+@app.get("/stats/")
 async def read_system_status(current_user: Annotated[User, Depends(get_current_user)]):
-    return {"status": "ok"}
+    return get_stats_of_user(current_user)
+
+@app.post("/stats/create")
+async def create_new_stat(body: Annotated[ CreateNewStatItem, ...], current_user: Annotated[User, Depends(get_current_user)]):
+    event = get_event_by_name(str(body.event))
+    create_new_stat_for_user(current_user, User_stat(iduser=int(current_user.iduser),event_id=event.id, event_name=event.name,count=int(body.count)))
+    raise HTTPException(status_code=200, detail={'status':'success'})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, root_path='/api/v1')
