@@ -1,0 +1,10 @@
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+
+[providers]
+  [providers.file]
+    filename = "routes.toml"
+[api]
+  dashboard = true
+  insecure = true
